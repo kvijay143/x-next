@@ -10,6 +10,7 @@ import {
   } from 'firebase/firestore';
 import { app } from '@/firebase';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 export default function CommentModal(){
      const {data:session}=useSession();
      const [input, setInput] = useState(''); // [1
@@ -17,7 +18,7 @@ export default function CommentModal(){
      const db=getFirestore(app)
     const[open,setOpen]=useRecoilState(modalState);
     const[postId,setPostId]=useRecoilState(postIdState);
-
+     const router=useRouter();
     useEffect(() => {
         if (postId !== '') {
           const postRef = doc(db, 'posts', postId);
@@ -31,7 +32,21 @@ export default function CommentModal(){
           return () => unsubscribe();
         }
       }, [postId]);
-      const sendComment=()=>{}
+      const sendComment= async()=>{
+          addDoc(collection(db,'posts',postId,'comments'),{
+            name:session.user.name,
+            username:session.user.username,
+            userImg:session.user.image,
+            comment:input,
+            timestamp:serverTimestamp(),
+          }).then(()=>{
+            setInput('');
+            setOpen(false);
+            router.push(`/posts/${postId}`)
+          }).catch((error)=>{
+            console.log('Error adding comment',error);
+          });
+     };
     return(
         <div>
            {open && (
