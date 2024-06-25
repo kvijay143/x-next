@@ -1,15 +1,19 @@
 'use client'
+import { modalState,postIdState } from "@/atom/modalAtom";
 import { app } from "@/firebase"
 import { getFirestore,collection,deleteDoc,doc,onSnapshot,serverTimestamp,setDoc} from "firebase/firestore";
 import { useSession } from "next-auth/react"
 import { useEffect, useState } from "react";
  import { HiOutlineChat,HiOutlineHeart,HiOutlineTrash ,HiHeart} from "react-icons/hi"
+import { useRecoilState } from "recoil";
  
 
- export default function Icons({id}){
+ export default function Icons({id,uid}){
     const{data:session}=useSession();  
     const db=getFirestore(app);
     const [isLiked, setIsLiked] = useState(false);
+    const[open,setOpen]=useRecoilState(modalState);
+    const [postId, setPostId] = useRecoilState(postIdState);
   const [likes, setLikes] = useState([]); // [1
   const likePost = async () => {
     if (session) {
@@ -38,12 +42,34 @@ import { useEffect, useState } from "react";
     );
   }, [likes]);
 
-     
+  const deletePost = async () => {
+    if (window.confirm('Are you sure you want to delete this post?')) {
+      if (session?.user?.uid === uid) {
+        deleteDoc(doc(db, 'posts', id))
+          .then(() => {
+            console.log('Document successfully deleted!');
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error('Error removing document: ', error);
+          });
+      } else {
+        alert('You are not authorized to delete this post');
+      }
+    }
+  };
 
     return(
         <div className='flex justify-start gap-5 p-2 text-gray-500'>
          
-          <HiOutlineChat
+          <HiOutlineChat   onClick={() => {
+            if (!session) {
+              signIn();
+            } else {
+              setOpen(!open);
+              setPostId(id);
+            }
+          }}
             className='h-8 w-8 cursor-pointer rounded-full  transition duration-500 ease-in-out p-2 hover:text-sky-500 hover:bg-sky-100'/>
                
         <div className='flex items-center'>
@@ -65,9 +91,13 @@ import { useEffect, useState } from "react";
         )}
       </div>
 
-
-         <HiOutlineTrash
-          className='h-8 w-8 cursor-pointer rounded-full  transition duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'/>
+        
+      {session?.user?.uid === uid && (
+        <HiOutlineTrash
+          className='h-8 w-8 cursor-pointer rounded-full  transition duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'
+          onClick={deletePost}
+        />
+      )}
             </div>
     )
  }
