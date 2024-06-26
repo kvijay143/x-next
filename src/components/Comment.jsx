@@ -1,6 +1,6 @@
 'use client';
 
-import { HiDotsHorizontal, HiHeart, HiOutlineHeart } from 'react-icons/hi';
+import { HiDotsHorizontal, HiHeart, HiOutlineHeart, HiOutlineTrash } from 'react-icons/hi';
 import { useState, useEffect } from 'react';
 import {
   getFirestore,
@@ -14,11 +14,15 @@ import {
 import { app } from '../firebase';
 import { signIn, useSession } from 'next-auth/react';
 
-export default function Comment({ comment, commentId, originalPostId }) {
+export default function Comment({ comment, commentId, originalPostId, uid }) {
   const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState([]); // [1
+  const [likes, setLikes] = useState([]);
   const { data: session } = useSession();
   const db = getFirestore(app);
+
+  useEffect(() => {
+    console.log('Comment UID:', uid); // Log the uid
+  }, [uid]);
 
   const likePost = async () => {
     if (session) {
@@ -56,6 +60,23 @@ export default function Comment({ comment, commentId, originalPostId }) {
     }
   };
 
+  const deleteComment = async () => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      if (session?.user?.uid === uid) {
+        deleteDoc(doc(db, 'posts', originalPostId, 'comments', commentId))
+          .then(() => {
+            console.log('Comment successfully deleted!');
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error('Error removing comment: ', error);
+          });
+      } else {
+        alert('You are not authorized to delete this comment');
+      }
+    }
+  };
+
   useEffect(() => {
     onSnapshot(
       collection(db, 'posts', originalPostId, 'comments', commentId, 'likes'),
@@ -63,13 +84,13 @@ export default function Comment({ comment, commentId, originalPostId }) {
         setLikes(snapshot.docs);
       }
     );
-  }, [db]);
+  }, [db, originalPostId, commentId]);
 
   useEffect(() => {
     setIsLiked(
       likes.findIndex((like) => like.id === session?.user?.uid) !== -1
     );
-  }, [likes]);
+  }, [likes, session]);
 
   return (
     <div className='flex p-3 border-b border-gray-200 hover:bg-gray-50 pl-10'>
@@ -92,18 +113,24 @@ export default function Comment({ comment, commentId, originalPostId }) {
           {isLiked ? (
             <HiHeart
               onClick={likePost}
-              className='h-8 w-8 cursor-pointer rounded-full  transition text-red-600 duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'
+              className='h-8 w-8 cursor-pointer rounded-full transition text-red-600 duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'
             />
           ) : (
             <HiOutlineHeart
               onClick={likePost}
-              className='h-8 w-8 cursor-pointer rounded-full  transition duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'
+              className='h-8 w-8 cursor-pointer rounded-full transition duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'
             />
           )}
           {likes.length > 0 && (
             <span className={`text-xs ${isLiked && 'text-red-600'}`}>
               {likes.length}
             </span>
+          )}
+          {session?.user?.uid === uid && (
+            <HiOutlineTrash
+              className='h-8 w-8 cursor-pointer rounded-full transition duration-500 ease-in-out p-2 hover:text-red-500 hover:bg-red-100'
+              onClick={deleteComment}
+            />
           )}
         </div>
       </div>

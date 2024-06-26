@@ -32,21 +32,28 @@ export default function CommentModal(){
           return () => unsubscribe();
         }
       }, [postId]);
-      const sendComment= async()=>{
-          addDoc(collection(db,'posts',postId,'comments'),{
-            name:session.user.name,
-            username:session.user.username,
-            userImg:session.user.image,
-            comment:input,
-            timestamp:serverTimestamp(),
-          }).then(()=>{
-            setInput('');
-            setOpen(false);
-            router.push(`/posts/${postId}`)
-          }).catch((error)=>{
-            console.log('Error adding comment',error);
-          });
-     };
+      const sendComment = async () => {
+        const commentData = {
+            name: session.user.name,
+            username: session.user.username,
+            userImg: session.user.image,
+            comment: input,
+            timestamp: serverTimestamp(),
+            uid: session.user.uid,
+        };
+        
+        addDoc(collection(db, 'posts', postId, 'comments'), commentData)
+            .then(() => {
+            //    console.log('Comment added:', commentData); // Log the comment data
+                setInput('');
+                setOpen(false);
+                router.push(`/posts/${postId}`)
+            })
+            .catch((error) => {
+                console.log('Error adding comment', error);
+            });
+    };
+    
     return(
         <div>
            {open && (

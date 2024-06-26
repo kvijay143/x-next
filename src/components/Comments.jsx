@@ -13,7 +13,8 @@ import Comment from './Comment';
 
 export default function Comments({ id }) {
   const db = getFirestore(app);
-  const [comments, setComments] = useState([]); // [1
+  const [comments, setComments] = useState([]);
+
   useEffect(() => {
     onSnapshot(
       query(
@@ -25,16 +26,22 @@ export default function Comments({ id }) {
       }
     );
   }, [db, id]);
+
   return (
     <div>
-      {comments.map((comment) => (
-        <Comment
-          key={comment.id}
-          comment={comment.data()}
-          commentId={comment.id}
-          originalPostId={id}
-        />
-      ))}
+      {comments.map((comment) => {
+        const data = comment.data();
+       // console.log('Comment data:', data); // Log the comment data
+        return (
+          <Comment
+            key={comment.id}
+            comment={data}
+            commentId={comment.id}
+            originalPostId={id}
+            uid={data.uid}
+          />
+        );
+      })}
     </div>
   );
 }
