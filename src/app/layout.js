@@ -12,6 +12,7 @@ export const metadata = {
   description: "Generated a X-Clone using Next.js",
 };
 
+export const dynamic='force-dynamic';
 export default function RootLayout({ children }) {
   return (
     <SessionWrapper>
